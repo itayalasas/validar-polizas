@@ -15,8 +15,7 @@ const transformApiResponse = (apiData: ApiPolicyResponse): PolicyData => {
 
 export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
   try {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-    const url = `${backendUrl}/api/verify-policy`;
+    const url = '/api/verify-policy';
 
     const response = await fetch(url, {
       method: 'POST',
