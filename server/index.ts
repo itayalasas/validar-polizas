@@ -86,7 +86,8 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
 
     const token = await getAccessToken();
     const apiBaseUrl = process.env.VITE_API_BASE_URL || 'https://sura-portales-xapi-4o6opf.u1lglj.bra-s1.cloudhub.io/api/portales/valida-poliza';
-    const url = `${apiBaseUrl}/polizas?codigo="${code}"`;
+    const encodedCode = encodeURIComponent(code);
+    const url = `${apiBaseUrl}/polizas?codigo=${encodedCode}`;
 
     const response = await fetch(url, {
       method: 'GET',
