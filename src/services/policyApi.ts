@@ -3,7 +3,7 @@ import { ApiResponse, PolicyData } from '../types/policy';
 // Mock data para simular la API
 const mockPolicies: PolicyData[] = [
   {
-    id: "ACT001",
+    id: "0000 0000 0000",
     tomador: "Ana Patricia Vásquez Herrera",
     asegurado: "Ana Patricia Vásquez Herrera",
     vigencia: {
