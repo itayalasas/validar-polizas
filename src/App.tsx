@@ -190,7 +190,7 @@ function App() {
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm mb-4">
               <div>
-                <p className="font-medium text-sura-blue">ACT001</p>
+                <p className="font-medium text-sura-blue">0000 0000 0000</p>
                 <p className="text-blue-600">Ana Patricia Vásquez (VIGENTE)</p>
               </div>
               <div>
