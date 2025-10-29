@@ -15,10 +15,10 @@ const transformApiResponse = (apiData: ApiPolicyResponse): PolicyData => {
 
 export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const functionUrl = `${supabaseUrl}/functions/v1/verify-policy`;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    const url = `${backendUrl}/api/verify-policy`;
 
-    const response = await fetch(functionUrl, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
