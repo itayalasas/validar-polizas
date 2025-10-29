@@ -1,0 +1,31 @@
+@font-face {
+  font-family: 'Sura';
+  src: url('./assets/fonts/SuraVF.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Sura';
+  src: url('./assets/fonts/Sura-ItalicaVF.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Sura', sans-serif;
+}
+
+/* Colores de marca Sura */
+:root {
+  --sura-red: #E31E24;
+  --sura-red-dark: #C41E3A;
+  --sura-red-light: #FF6B6B;
+  --sura-blue: #2D6DF6;
+  --sura-gray: #4A5568;
+  --sura-gray-light: #718096;
+}
