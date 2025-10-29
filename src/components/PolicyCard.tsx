@@ -12,12 +12,12 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
-      month: '2-digit', 
+      month: '2-digit',
       year: 'numeric'
     });
   };
 
-  const isActive = new Date() <= new Date(policy.vigencia.fin);
+  const isVigente = policy.estadoVigencia === 'VIGENTE';
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 animate-fade-in">
@@ -27,11 +27,11 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
           <h3 className="text-xl font-semibold text-gray-900">Póliza Verificada</h3>
         </div>
         <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-          isActive 
-            ? 'bg-green-100 text-green-800' 
+          isVigente
+            ? 'bg-green-100 text-green-800'
             : 'bg-red-100 text-red-800'
         }`}>
-          {isActive ? 'Vigente' : 'Vencida'}
+          {policy.estadoVigencia}
         </div>
       </div>
 
@@ -41,8 +41,6 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
           <div>
             <p className="text-sm font-medium text-gray-500">Tomador</p>
             <p className="text-lg text-gray-900">{policy.tomador}</p>
-                <p className="text-blue-600">Ana Patricia Vásquez (VIGENTE)</p>
-                <p className="text-blue-600">María González Rodríguez</p>
           </div>
         </div>
 
@@ -51,8 +49,6 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
           <div>
             <p className="text-sm font-medium text-gray-500">Asegurado</p>
             <p className="text-lg text-gray-900">{policy.asegurado}</p>
-                <p className="text-blue-600">Carlos Martínez López</p>
-                <p className="text-blue-600">Laura Fernández Silva</p>
           </div>
         </div>
 
@@ -63,7 +59,6 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
             <p className="text-xs text-blue-700 italic">
               {formatDate(policy.vigencia.inicio)} - {formatDate(policy.vigencia.fin)}
             </p>
-                <p className="text-blue-600">Roberto Díaz Morales</p>
           </div>
         </div>
       </div>
