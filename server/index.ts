@@ -1,5 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const PORT = 3001;
@@ -54,6 +57,8 @@ const getAccessToken = async (): Promise<string> => {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token response error:', response.status, errorText);
       throw new Error('Error al obtener el token de autenticación');
     }
 
@@ -98,6 +103,8 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
           message: 'Código de verificación no encontrado. Verifique que el código sea correcto.',
         });
       }
+      const errorText = await response.text();
+      console.error('API response error:', response.status, errorText);
       throw new Error('Error al verificar la póliza');
     }
 
