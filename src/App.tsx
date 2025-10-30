@@ -183,38 +183,7 @@ function App() {
           {/* Results */}
           {policyData && <PolicyCard policy={policyData} />}
 
-          {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-6 max-w-2xl mx-auto">
-            <h3 className="text-lg font-semibold text-sura-blue mb-3">
-              Códigos de Verificación de Ejemplo
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-              <div>
-                <p className="font-medium text-sura-blue">0000 0000 0000</p>
-                <p className="text-blue-600">Ana Patricia Vásquez (VIGENTE)</p>
-              </div>
-              <div>
-                <p className="font-medium text-sura-blue">POL001</p>
-                <p className="text-red-600">María González Rodríguez</p>
-              </div>
-              <div>
-                <p className="font-medium text-sura-blue">POL002</p>
-                <p className="text-red-600">Carlos Martínez López</p>
-              </div>
-              <div>
-                <p className="font-medium text-sura-blue">VER123</p>
-                <p className="text-red-600">Laura Fernández Silva</p>
-              </div>
-              <div>
-                <p className="font-medium text-sura-blue">TEST456</p>
-                <p className="text-red-600">Roberto Díaz Morales</p>
-              </div>
-            </div>
-            <p className="text-xs text-sura-blue italic">
-              * ACT001 es la única póliza actualmente vigente
-            </p>
-          </div>
-        </div>
+         
       </div>
     </div>
   );
