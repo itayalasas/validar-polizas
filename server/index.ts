@@ -73,12 +73,6 @@ const getAccessToken = async (): Promise<string> => {
     throw new Error('Missing required environment variables for authentication');
   }
 
-  const params = new URLSearchParams();
-  params.append('client_id', clientId);
-  params.append('client_secret', clientSecret);
-  params.append('grant_type', grantType);
-  params.append('scope', scope);
-
   if (!isProduction) {
     console.log('=== Token Request Debug ===');
     console.log('URL:', tokenUrl);
@@ -93,6 +87,15 @@ const getAccessToken = async (): Promise<string> => {
   console.log('🔐 [AUTH] Grant Type:', grantType);
   console.log('🔐 [AUTH] Scope:', scope);
   console.log('🔐 [AUTH] Client Secret presente:', clientSecret ? 'SÍ (longitud: ' + clientSecret.length + ')' : 'NO');
+  console.log('🔐 [AUTH] Client Secret (primeros 10 chars):', clientSecret?.substring(0, 10) + '...');
+
+  const bodyParts = [
+    `client_id=${clientId}`,
+    `client_secret=${clientSecret}`,
+    `grant_type=${grantType}`,
+    `scope=${encodeURIComponent(scope)}`
+  ];
+  const body = bodyParts.join('&');
 
   try {
     const httpAgent = new http.Agent({ keepAlive: true });
@@ -102,14 +105,14 @@ const getAccessToken = async (): Promise<string> => {
     });
 
     console.log('🔐 [AUTH] Enviando petición POST a Microsoft Azure AD...');
-    console.log('🔐 [AUTH] Body params:', params.toString().replace(clientSecret || '', '***SECRET***'));
+    console.log('🔐 [AUTH] Body params (secret oculto):', body.replace(clientSecret || '', '***SECRET***'));
 
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: params.toString(),
+      body: body,
       // @ts-ignore
       agent: (_parsedURL: URL) => {
         if (_parsedURL.protocol === 'http:') {
