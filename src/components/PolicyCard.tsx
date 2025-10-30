@@ -39,7 +39,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
         <div className="flex items-start space-x-3">
           <User className="text-gray-400 mt-1" size={20} />
           <div>
-            <p className="text-sm font-medium text-gray-500">Tomador</p>
+            <p className="text-sm font-medium text-gray-500">Contratante</p>
             <p className="text-lg text-gray-900">{policy.tomador}</p>
           </div>
         </div>
