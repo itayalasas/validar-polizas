@@ -15,12 +15,20 @@ const transformApiResponse = (apiData: ApiPolicyResponse): PolicyData => {
 
 export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
   try {
-    const url = '/api/verify-policy';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Configuración de Supabase no encontrada');
+    }
+
+    const url = `${supabaseUrl}/functions/v1/verify-policy`;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
       },
       body: JSON.stringify({ code }),
     });

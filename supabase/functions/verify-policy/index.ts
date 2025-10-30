@@ -12,6 +12,17 @@ interface TokenResponse {
   expires_in: number;
 }
 
+interface ApiPolicyResponse {
+  id: number;
+  codigoVerificacion: string;
+  nombreTomador: string;
+  nombreAsegurado: string;
+  fechaInicioVigencia: string;
+  fechaFinVigencia: string;
+  fechaCreacion: string;
+  estadoVigencia: string;
+}
+
 let cachedToken: string | null = null;
 let tokenExpiration: number = 0;
 
@@ -20,11 +31,15 @@ const getAccessToken = async (): Promise<string> => {
     return cachedToken;
   }
 
-  const tokenUrl = "https://login.microsoftonline.com/3c0bd4fe-1111-4d13-8e0c-7c33b9eb7581/oauth2/v2.0/token";
-  const clientId = "1fc6ca42-b37d-457b-a0d9-e0b5bf416f98";
-  const clientSecret = "k158Q~6AjT.p9gXhYzryGYkL-0XSCloRYSFcobIO";
-  const grantType = "client_credentials";
-  const scope = "api://1fc6ca42-b37d-457b-a0d9-e0b5bf416f98/.default";
+  const tokenUrl = Deno.env.get("VITE_AUTH_TOKEN_URL");
+  const clientId = Deno.env.get("VITE_CLIENT_ID");
+  const clientSecret = Deno.env.get("VITE_CLIENT_SECRET");
+  const grantType = Deno.env.get("VITE_GRANT_TYPE") || "client_credentials";
+  const scope = Deno.env.get("VITE_SCOPE");
+
+  if (!tokenUrl || !clientId || !clientSecret || !scope) {
+    throw new Error("Missing required environment variables for authentication");
+  }
 
   const params = new URLSearchParams();
   params.append("client_id", clientId);
@@ -62,9 +77,31 @@ Deno.serve(async (req: Request) => {
   try {
     const { code } = await req.json();
 
-    if (!code) {
+    if (!code || typeof code !== "string") {
       return new Response(
-        JSON.stringify({ error: "Código de verificación requerido" }),
+        JSON.stringify({
+          success: false,
+          message: "Código de verificación requerido",
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const cleanCode = code.trim();
+    const codeWithoutSpaces = cleanCode.replace(/\s/g, "");
+
+    if (!/^\d{12}$/.test(codeWithoutSpaces)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "El código debe contener exactamente 12 dígitos",
+        }),
         {
           status: 400,
           headers: {
@@ -76,8 +113,15 @@ Deno.serve(async (req: Request) => {
     }
 
     const token = await getAccessToken();
-    const apiBaseUrl = "https://sura-portales-xapi-4o6opf.u1lglj.bra-s1.cloudhub.io/api/portales/valida-poliza";
-    const url = `${apiBaseUrl}/polizas?codigo="${code}"`;
+    const apiBaseUrl = Deno.env.get("VITE_API_BASE_URL");
+
+    if (!apiBaseUrl) {
+      throw new Error("API base URL not configured");
+    }
+
+    const codigoWithQuotes = `"${cleanCode}"`;
+    const encodedCodigo = encodeURIComponent(codigoWithQuotes);
+    const url = `${apiBaseUrl}?codigo=${encodedCodigo}`;
 
     const apiResponse = await fetch(url, {
       method: "GET",
@@ -103,10 +147,12 @@ Deno.serve(async (req: Request) => {
           }
         );
       }
+      const errorText = await apiResponse.text();
+      console.error("API response error:", apiResponse.status, errorText);
       throw new Error("Error al verificar la póliza");
     }
 
-    const policyData = await apiResponse.json();
+    const policyData: ApiPolicyResponse = await apiResponse.json();
 
     return new Response(
       JSON.stringify({
