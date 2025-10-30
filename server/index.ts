@@ -85,9 +85,12 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
     }
 
     const token = await getAccessToken();
-    const apiBaseUrl = process.env.VITE_API_BASE_URL || 'https://sura-portales-xapi-4o6opf.u1lglj.bra-s1.cloudhub.io/api/portales/valida-poliza';
+    const apiBaseUrl = process.env.VITE_API_BASE_URL || 'https://sura-portales-xapi-4o6opf.u1lglj.bra-s1.cloudhub.io/api/portales/valida-poliza/polizas';
     const encodedCode = encodeURIComponent(code);
     const url = `${apiBaseUrl}?codigo=${encodedCode}`;
+
+    console.log('Verificando póliza con código:', code);
+    console.log('URL:', url);
 
     const response = await fetch(url, {
       method: 'GET',
