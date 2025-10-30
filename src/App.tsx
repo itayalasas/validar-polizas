@@ -183,7 +183,8 @@ function App() {
           {/* Results */}
           {policyData && <PolicyCard policy={policyData} />}
 
-         
+        
+        </div>
       </div>
     </div>
   );
