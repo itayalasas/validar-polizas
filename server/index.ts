@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import https from 'https';
+import http from 'http';
 
 dotenv.config();
 
@@ -86,12 +88,26 @@ const getAccessToken = async (): Promise<string> => {
   }
 
   try {
+    const httpAgent = new http.Agent({ keepAlive: true });
+    const httpsAgent = new https.Agent({
+      keepAlive: true,
+      rejectUnauthorized: false
+    });
+
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      // @ts-ignore
+      agent: (_parsedURL: URL) => {
+        if (_parsedURL.protocol === 'http:') {
+          return httpAgent;
+        } else {
+          return httpsAgent;
+        }
+      }
     });
 
     if (!response.ok) {
@@ -148,12 +164,26 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
       console.log('Request URL configured');
     }
 
+    const httpAgent = new http.Agent({ keepAlive: true });
+    const httpsAgent = new https.Agent({
+      keepAlive: true,
+      rejectUnauthorized: false
+    });
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      // @ts-ignore
+      agent: (_parsedURL: URL) => {
+        if (_parsedURL.protocol === 'http:') {
+          return httpAgent;
+        } else {
+          return httpsAgent;
+        }
+      }
     });
 
     if (!response.ok) {
