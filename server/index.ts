@@ -87,12 +87,22 @@ const getAccessToken = async (): Promise<string> => {
     console.log('scope:', scope);
   }
 
+  console.log('🔐 [AUTH] Iniciando solicitud de token...');
+  console.log('🔐 [AUTH] URL:', tokenUrl);
+  console.log('🔐 [AUTH] Client ID:', clientId);
+  console.log('🔐 [AUTH] Grant Type:', grantType);
+  console.log('🔐 [AUTH] Scope:', scope);
+  console.log('🔐 [AUTH] Client Secret presente:', clientSecret ? 'SÍ (longitud: ' + clientSecret.length + ')' : 'NO');
+
   try {
     const httpAgent = new http.Agent({ keepAlive: true });
     const httpsAgent = new https.Agent({
       keepAlive: true,
       rejectUnauthorized: false
     });
+
+    console.log('🔐 [AUTH] Enviando petición POST a Microsoft Azure AD...');
+    console.log('🔐 [AUTH] Body params:', params.toString().replace(clientSecret || '', '***SECRET***'));
 
     const response = await fetch(tokenUrl, {
       method: 'POST',
@@ -110,28 +120,47 @@ const getAccessToken = async (): Promise<string> => {
       }
     });
 
+    console.log('🔐 [AUTH] Respuesta recibida - Status:', response.status);
+    console.log('🔐 [AUTH] Response OK:', response.ok);
+    console.log('🔐 [AUTH] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Token response error:', response.status, errorText);
+      console.error('❌ [AUTH] Token response error:', response.status, errorText);
       throw new Error('Error al obtener el token de autenticación');
     }
 
     const data: TokenResponse = await response.json();
+    console.log('✅ [AUTH] Token obtenido exitosamente');
+    console.log('✅ [AUTH] Token type:', data.token_type);
+    console.log('✅ [AUTH] Expires in:', data.expires_in, 'segundos');
+    console.log('✅ [AUTH] Token (primeros 20 chars):', data.access_token.substring(0, 20) + '...');
+
     cachedToken = data.access_token;
     tokenExpiration = Date.now() + (data.expires_in * 1000) - 60000;
 
     return data.access_token;
   } catch (error) {
-    console.error('Error obteniendo token:', error);
+    console.error('❌ [AUTH] Error obteniendo token:', error);
+    console.error('❌ [AUTH] Error name:', error instanceof Error ? error.name : 'unknown');
+    console.error('❌ [AUTH] Error message:', error instanceof Error ? error.message : 'unknown');
+    console.error('❌ [AUTH] Error stack:', error instanceof Error ? error.stack : 'unknown');
+
+    if (error && typeof error === 'object' && 'cause' in error) {
+      console.error('❌ [AUTH] Error cause:', error.cause);
+    }
+
     throw new Error('No se pudo autenticar con el servicio');
   }
 };
 
 app.post('/api/verify-policy', async (req: Request, res: Response) => {
   try {
+    console.log('📋 [VERIFY] Nueva solicitud de verificación de póliza');
     const { code } = req.body;
 
     if (!code || typeof code !== 'string') {
+      console.log('❌ [VERIFY] Código de verificación no proporcionado');
       return res.status(400).json({
         success: false,
         message: 'Código de verificación requerido',
@@ -141,17 +170,25 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
     const cleanCode = code.trim();
     const codeWithoutSpaces = cleanCode.replace(/\s/g, '');
 
+    console.log('📋 [VERIFY] Código recibido (oculto):', code.replace(/\d/g, '*'));
+    console.log('📋 [VERIFY] Código limpio (sin espacios, oculto):', codeWithoutSpaces.replace(/\d/g, '*'));
+    console.log('📋 [VERIFY] Longitud del código:', codeWithoutSpaces.length);
+
     if (!/^\d{12}$/.test(codeWithoutSpaces)) {
+      console.log('❌ [VERIFY] Código inválido - No tiene 12 dígitos');
       return res.status(400).json({
         success: false,
         message: 'El código debe contener exactamente 12 dígitos',
       });
     }
 
+    console.log('📋 [VERIFY] Código válido, obteniendo token de acceso...');
     const token = await getAccessToken();
+    console.log('✅ [VERIFY] Token obtenido, procediendo a verificar póliza');
     const apiBaseUrl = process.env.VITE_API_BASE_URL;
 
     if (!apiBaseUrl) {
+      console.error('❌ [VERIFY] API base URL no configurada');
       throw new Error('API base URL not configured');
     }
 
@@ -159,10 +196,9 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
     const encodedCodigo = encodeURIComponent(codigoWithQuotes);
     const url = `${apiBaseUrl}?codigo=${encodedCodigo}`;
 
-    if (!isProduction) {
-      console.log('Verificando póliza con código:', code.replace(/\d/g, '*'));
-      console.log('Request URL configured');
-    }
+    console.log('🌐 [VERIFY] API Base URL:', apiBaseUrl);
+    console.log('🌐 [VERIFY] URL completa (código oculto):', url.replace(/codigo=.*/, 'codigo=***'));
+    console.log('🌐 [VERIFY] Enviando petición GET a API de Sura...');
 
     const httpAgent = new http.Agent({ keepAlive: true });
     const httpsAgent = new https.Agent({
@@ -186,26 +222,34 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
       }
     });
 
+    console.log('🌐 [VERIFY] Respuesta de API Sura - Status:', response.status);
+    console.log('🌐 [VERIFY] Response OK:', response.ok);
+
     if (!response.ok) {
       if (response.status === 404) {
+        console.log('❌ [VERIFY] Póliza no encontrada (404)');
         return res.status(404).json({
           success: false,
           message: 'Código de verificación no encontrado. Verifique que el código sea correcto.',
         });
       }
       const errorText = await response.text();
-      console.error('API response error:', response.status, errorText);
+      console.error('❌ [VERIFY] API response error:', response.status, errorText);
       throw new Error('Error al verificar la póliza');
     }
 
     const policyData: ApiPolicyResponse = await response.json();
+    console.log('✅ [VERIFY] Póliza encontrada exitosamente');
+    console.log('✅ [VERIFY] Nombre tomador:', policyData.nombreTomador);
+    console.log('✅ [VERIFY] Estado vigencia:', policyData.estadoVigencia);
 
     return res.status(200).json({
       success: true,
       data: policyData,
     });
   } catch (error) {
-    console.error('Error verificando póliza:', error);
+    console.error('❌ [VERIFY] Error verificando póliza:', error);
+    console.error('❌ [VERIFY] Error stack:', error instanceof Error ? error.stack : 'unknown');
     return res.status(500).json({
       success: false,
       message: error instanceof Error
@@ -216,5 +260,15 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+  console.log('='.repeat(60));
+  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  console.log('='.repeat(60));
+  console.log('📍 Environment Variables Status:');
+  console.log('   - VITE_AUTH_TOKEN_URL:', process.env.VITE_AUTH_TOKEN_URL ? '✅ Configurado' : '❌ NO configurado');
+  console.log('   - VITE_CLIENT_ID:', process.env.VITE_CLIENT_ID ? '✅ Configurado' : '❌ NO configurado');
+  console.log('   - VITE_CLIENT_SECRET:', process.env.VITE_CLIENT_SECRET ? '✅ Configurado' : '❌ NO configurado');
+  console.log('   - VITE_GRANT_TYPE:', process.env.VITE_GRANT_TYPE ? '✅ Configurado' : '❌ NO configurado');
+  console.log('   - VITE_SCOPE:', process.env.VITE_SCOPE ? '✅ Configurado' : '❌ NO configurado');
+  console.log('   - VITE_API_BASE_URL:', process.env.VITE_API_BASE_URL ? '✅ Configurado' : '❌ NO configurado');
+  console.log('='.repeat(60));
 });
