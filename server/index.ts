@@ -37,7 +37,7 @@ const getAccessToken = async (): Promise<string> => {
 
   const tokenUrl = process.env.VITE_AUTH_TOKEN_URL || 'https://login.microsoftonline.com/3c0bd4fe-1111-4d13-8e0c-7c33b9eb7581/oauth2/v2.0/token';
   const clientId = process.env.VITE_CLIENT_ID || '1fc6ca42-b37d-457b-a0d9-e0b5bf416f98';
-  const clientSecret = process.env.VITE_CLIENT_SECRET || 'k158Q~6AjT.p9gXhYzryGYkL-0XSCloRYSFcobIO';
+  const clientSecret = process.env.VITE_CLIENT_SECRET || 'k158Q~6AjT.p9gXhYzryGYkL-0XSCloRYSFcobiO';
   const grantType = process.env.VITE_GRANT_TYPE || 'client_credentials';
   const scope = process.env.VITE_SCOPE || 'api://1fc6ca42-b37d-457b-a0d9-e0b5bf416f98/.default';
 
@@ -46,6 +46,14 @@ const getAccessToken = async (): Promise<string> => {
   params.append('client_secret', clientSecret);
   params.append('grant_type', grantType);
   params.append('scope', scope);
+
+  console.log('=== Token Request Debug ===');
+  console.log('URL:', tokenUrl);
+  console.log('client_id:', clientId);
+  console.log('client_secret:', clientSecret);
+  console.log('grant_type:', grantType);
+  console.log('scope:', scope);
+  console.log('Body params:', params.toString());
 
   try {
     const response = await fetch(tokenUrl, {
@@ -86,11 +94,13 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
 
     const token = await getAccessToken();
     const apiBaseUrl = process.env.VITE_API_BASE_URL || 'https://sura-portales-xapi-4o6opf.u1lglj.bra-s1.cloudhub.io/api/portales/valida-poliza/polizas';
-    const encodedCode = encodeURIComponent(code);
+    const encodedCode = encodeURIComponent(`"${code}"`);
     const url = `${apiBaseUrl}?codigo=${encodedCode}`;
 
     console.log('Verificando póliza con código:', code);
     console.log('URL:', url);
+    console.log('Token (primeros 50 caracteres):', token.substring(0, 50) + '...');
+    console.log('Authorization header:', `Bearer ${token.substring(0, 50)}...`);
 
     const response = await fetch(url, {
       method: 'GET',
