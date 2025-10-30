@@ -15,7 +15,8 @@ const transformApiResponse = (apiData: ApiPolicyResponse): PolicyData => {
 
 export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
   try {
-    const url = '/api/verify-policy';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const url = `${supabaseUrl}/functions/v1/verify-policy`;
 
     const response = await fetch(url, {
       method: 'POST',

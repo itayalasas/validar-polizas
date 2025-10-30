@@ -41,18 +41,20 @@ const getAccessToken = async (): Promise<string> => {
     throw new Error("Missing required environment variables for authentication");
   }
 
-  const params = new URLSearchParams();
-  params.append("client_id", clientId);
-  params.append("client_secret", clientSecret);
-  params.append("grant_type", grantType);
-  params.append("scope", scope);
+  const bodyParts = [
+    `client_id=${clientId}`,
+    `client_secret=${clientSecret}`,
+    `grant_type=${grantType}`,
+    `scope=${encodeURIComponent(scope)}`
+  ];
+  const body = bodyParts.join('&');
 
   const response = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: params.toString(),
+    body: body,
   });
 
   if (!response.ok) {
