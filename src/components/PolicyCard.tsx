@@ -1,7 +1,8 @@
 import React from 'react';
-import { User, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { PolicyData } from '../types/policy';
 import { CheckIcon } from './CheckIcon';
+import personaSilueta from '../assets/persona_silueta.svg';
 
 interface PolicyCardProps {
   policy: PolicyData;
@@ -37,7 +38,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
 
       <div className="space-y-4">
         <div className="flex items-start space-x-3">
-          <User className="text-gray-400 mt-1" size={20} />
+          <img src={personaSilueta} alt="" className="text-gray-400 mt-1 w-5 h-5" />
           <div>
             <p className="text-sm font-medium text-gray-500">Contratante</p>
             <p className="text-lg text-gray-900">{policy.tomador}</p>
@@ -45,7 +46,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
         </div>
 
         <div className="flex items-start space-x-3">
-          <User className="text-gray-400 mt-1" size={20} />
+          <img src={personaSilueta} alt="" className="text-gray-400 mt-1 w-5 h-5" />
           <div>
             <p className="text-sm font-medium text-gray-500">Asegurado</p>
             <p className="text-lg text-gray-900">{policy.asegurado}</p>
