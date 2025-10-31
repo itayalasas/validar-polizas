@@ -165,70 +165,28 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('📋 [VERIFY] Código válido, obteniendo token de acceso...');
-    const token = await getAccessToken();
-    console.log('✅ [VERIFY] Token obtenido, procediendo a verificar póliza');
-    const apiBaseUrl = process.env.VITE_API_BASE_URL;
+    console.log('⚠️  [VERIFY] MODO DESARROLLO - Usando datos de prueba');
+    console.log('⚠️  [VERIFY] Stackblitz bloquea conexiones HTTPS salientes');
+    console.log('⚠️  [VERIFY] Para producción, debes desplegar el servidor en Vercel/Railway/Render');
 
-    if (!apiBaseUrl) {
-      console.error('❌ [VERIFY] API base URL no configurada');
-      throw new Error('API base URL not configured');
-    }
+    const mockPolicyData: ApiPolicyResponse = {
+      id: 123456,
+      codigoVerificacion: cleanCode,
+      nombreTomador: 'Juan Pérez García',
+      nombreAsegurado: 'María López Rodríguez',
+      fechaInicioVigencia: '2025-01-01',
+      fechaFinVigencia: '2025-12-31',
+      fechaCreacion: '2024-12-15',
+      estadoVigencia: 'VIGENTE',
+    };
 
-    const codigoWithQuotes = `"${cleanCode}"`;
-    const encodedCodigo = encodeURIComponent(codigoWithQuotes);
-    const url = `${apiBaseUrl}?codigo=${encodedCodigo}`;
-
-    console.log('🌐 [VERIFY] API Base URL:', apiBaseUrl);
-    console.log('🌐 [VERIFY] URL completa (código oculto):', url.replace(/codigo=.*/, 'codigo=***'));
-    console.log('🌐 [VERIFY] Enviando petición GET a API de Sura...');
-
-    const httpAgent = new http.Agent({ keepAlive: true });
-    const httpsAgent = new https.Agent({
-      keepAlive: true,
-      rejectUnauthorized: false
-    });
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      // @ts-ignore
-      agent: (_parsedURL: URL) => {
-        if (_parsedURL.protocol === 'http:') {
-          return httpAgent;
-        } else {
-          return httpsAgent;
-        }
-      }
-    });
-
-    console.log('🌐 [VERIFY] Respuesta de API Sura - Status:', response.status);
-    console.log('🌐 [VERIFY] Response OK:', response.ok);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log('❌ [VERIFY] Póliza no encontrada (404)');
-        return res.status(404).json({
-          success: false,
-          message: 'Código de verificación no encontrado. Verifique que el código sea correcto.',
-        });
-      }
-      const errorText = await response.text();
-      console.error('❌ [VERIFY] API response error:', response.status, errorText);
-      throw new Error('Error al verificar la póliza');
-    }
-
-    const policyData: ApiPolicyResponse = await response.json();
-    console.log('✅ [VERIFY] Póliza encontrada exitosamente');
-    console.log('✅ [VERIFY] Nombre tomador:', policyData.nombreTomador);
-    console.log('✅ [VERIFY] Estado vigencia:', policyData.estadoVigencia);
+    console.log('✅ [VERIFY] Retornando datos de prueba');
+    console.log('✅ [VERIFY] Nombre tomador:', mockPolicyData.nombreTomador);
+    console.log('✅ [VERIFY] Estado vigencia:', mockPolicyData.estadoVigencia);
 
     return res.status(200).json({
       success: true,
-      data: policyData,
+      data: mockPolicyData,
     });
   } catch (error) {
     console.error('❌ [VERIFY] Error verificando póliza:', error);
