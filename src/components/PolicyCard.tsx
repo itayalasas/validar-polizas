@@ -22,14 +22,14 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 animate-fade-in">
-      <div className="flex items-center space-x-3 mb-4">
-        <CheckIcon className="text-green-500" size={32} />
+      <div className="flex items-center space-x-3 mb-6">
+        <CheckIcon className="text-green-500" size={40} />
         <h3 className="text-xl font-semibold text-gray-900">Póliza Verificada</h3>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-start space-x-3">
-          <img src={personaSilueta} alt="" className="w-6 h-6 mt-0.5" />
+          <img src={personaSilueta} alt="" className="w-8 h-8 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-gray-500">Contratante</p>
             <p className="text-lg text-gray-900">{policy.tomador}</p>
@@ -37,7 +37,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
         </div>
 
         <div className="flex items-start space-x-3">
-          <img src={personaSilueta} alt="" className="w-6 h-6 mt-0.5" />
+          <img src={personaSilueta} alt="" className="w-8 h-8 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-gray-500">Asegurado</p>
             <p className="text-lg text-gray-900">{policy.asegurado}</p>
@@ -45,7 +45,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
         </div>
 
         <div className="flex items-start space-x-3">
-          <img src={calendarioTexto} alt="" className="w-6 h-6 mt-0.5" />
+          <img src={calendarioTexto} alt="" className="w-8 h-8 mt-0.5" />
           <div>
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium text-gray-500">Vigencia</p>
