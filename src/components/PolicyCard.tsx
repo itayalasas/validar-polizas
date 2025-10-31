@@ -22,8 +22,8 @@ export const PolicyCard: React.FC<PolicyCardProps> = ({ policy }) => {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 animate-fade-in">
-      <div className="flex items-center space-x-2 mb-4">
-        <CheckIcon className="text-green-500" size={24} />
+      <div className="flex items-center space-x-3 mb-4">
+        <CheckIcon className="text-green-500" size={32} />
         <h3 className="text-xl font-semibold text-gray-900">Póliza Verificada</h3>
       </div>
 
