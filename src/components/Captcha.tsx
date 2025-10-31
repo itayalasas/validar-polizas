@@ -51,7 +51,7 @@ export const Captcha: React.FC<CaptchaProps> = ({ onValidation, resetTrigger }) 
           className="hover:opacity-80 transition-opacity"
           title="Generar nuevo problema"
         >
-          <img src={FlechasCirculando} alt="Refrescar" className="w-5 h-5" />
+          <img src={FlechasCirculando} alt="Refrescar" className="w-8 h-8" />
         </button>
       </div>
       
