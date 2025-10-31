@@ -14,17 +14,36 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(helmet());
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    console.log('🔍 [CORS] Request from origin:', origin);
+    // Permitir requests sin origin (como Postman, curl, etc.)
+    if (!origin) {
+      console.log('✅ [CORS] Permitido - Sin origin header');
+      return callback(null, true);
     }
+    // En producción, permitir todos los orígenes
+    if (isProduction) {
+      console.log('✅ [CORS] Permitido - Modo producción');
+      return callback(null, true);
+    }
+    // En desarrollo, revisar lista de orígenes permitidos
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ [CORS] Permitido - Origin en lista permitida');
+      return callback(null, true);
+    }
+    // Permitir orígenes de Stackblitz/WebContainer
+    if (origin.includes('webcontainer') || origin.includes('staticblitz') || origin.includes('bolt.new')) {
+      console.log('✅ [CORS] Permitido - Entorno de desarrollo (WebContainer)');
+      return callback(null, true);
+    }
+    console.log('❌ [CORS] Bloqueado - Origin no permitido:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 
@@ -165,28 +184,90 @@ app.post('/api/verify-policy', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('⚠️  [VERIFY] MODO DESARROLLO - Usando datos de prueba');
-    console.log('⚠️  [VERIFY] Stackblitz bloquea conexiones HTTPS salientes');
-    console.log('⚠️  [VERIFY] Para producción, debes desplegar el servidor en Vercel/Railway/Render');
+    console.log('📋 [VERIFY] Código válido, obteniendo token de acceso...');
+    const token = await getAccessToken();
+    console.log('✅ [VERIFY] Token obtenido, procediendo a verificar póliza');
 
-    const mockPolicyData: ApiPolicyResponse = {
-      id: 123456,
-      codigoVerificacion: cleanCode,
-      nombreTomador: 'Juan Pérez García',
-      nombreAsegurado: 'María López Rodríguez',
-      fechaInicioVigencia: '2025-01-01',
-      fechaFinVigencia: '2025-12-31',
-      fechaCreacion: '2024-12-15',
-      estadoVigencia: 'VIGENTE',
-    };
+    const apiBaseUrl = process.env.VITE_API_BASE_URL;
 
-    console.log('✅ [VERIFY] Retornando datos de prueba');
-    console.log('✅ [VERIFY] Nombre tomador:', mockPolicyData.nombreTomador);
-    console.log('✅ [VERIFY] Estado vigencia:', mockPolicyData.estadoVigencia);
+    if (!apiBaseUrl) {
+      console.error('❌ [VERIFY] API base URL no configurada');
+      throw new Error('API base URL not configured');
+    }
 
-    return res.status(200).json({
-      success: true,
-      data: mockPolicyData,
+    const codigoWithQuotes = `"${cleanCode}"`;
+    const encodedCodigo = encodeURIComponent(codigoWithQuotes);
+    const url = `${apiBaseUrl}?codigo=${encodedCodigo}`;
+
+    console.log('🌐 [VERIFY] Enviando petición GET a API de Sura...');
+
+    return new Promise((resolve) => {
+      const parsedUrl = new URL(url);
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || 443,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        rejectUnauthorized: false
+      };
+
+      const apiReq = https.request(options, (apiRes) => {
+        let data = '';
+
+        apiRes.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        apiRes.on('end', () => {
+          console.log('🌐 [VERIFY] Respuesta de API Sura - Status:', apiRes.statusCode);
+
+          if (apiRes.statusCode === 200) {
+            try {
+              const policyData: ApiPolicyResponse = JSON.parse(data);
+              console.log('✅ [VERIFY] Póliza encontrada exitosamente');
+              console.log('✅ [VERIFY] Nombre tomador:', policyData.nombreTomador);
+              console.log('✅ [VERIFY] Estado vigencia:', policyData.estadoVigencia);
+
+              resolve(res.status(200).json({
+                success: true,
+                data: policyData,
+              }));
+            } catch (e) {
+              console.error('❌ [VERIFY] Error parseando respuesta:', e);
+              resolve(res.status(500).json({
+                success: false,
+                message: 'Error al parsear respuesta del servidor',
+              }));
+            }
+          } else if (apiRes.statusCode === 404) {
+            console.log('❌ [VERIFY] Póliza no encontrada (404)');
+            resolve(res.status(404).json({
+              success: false,
+              message: 'Código de verificación no encontrado. Verifique que el código sea correcto.',
+            }));
+          } else {
+            console.error('❌ [VERIFY] API response error:', apiRes.statusCode, data);
+            resolve(res.status(500).json({
+              success: false,
+              message: 'Error al verificar la póliza',
+            }));
+          }
+        });
+      });
+
+      apiReq.on('error', (error) => {
+        console.error('❌ [VERIFY] Error en request:', error);
+        resolve(res.status(500).json({
+          success: false,
+          message: 'No se pudo conectar con el servicio',
+        }));
+      });
+
+      apiReq.end();
     });
   } catch (error) {
     console.error('❌ [VERIFY] Error verificando póliza:', error);
