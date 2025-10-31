@@ -37,14 +37,8 @@ export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
     const apiData: ApiPolicyResponse = result.data;
     const policyData = transformApiResponse(apiData);
 
-    if (apiData.estadoVigencia !== 'VIGENTE') {
-      return {
-        success: false,
-        message: `La póliza no está vigente. Estado actual: ${apiData.estadoVigencia}`,
-        data: policyData,
-      };
-    }
-
+    // Siempre retornar success true si se obtuvieron datos válidos
+    // El estado de vigencia se mostrará en el badge
     return {
       success: true,
       data: policyData,
