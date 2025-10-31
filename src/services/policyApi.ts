@@ -15,17 +15,12 @@ const transformApiResponse = (apiData: ApiPolicyResponse): PolicyData => {
 
 export const verifyPolicyCode = async (code: string): Promise<ApiResponse> => {
   try {
-    // Usar Edge Function de Supabase (funciona en Stackblitz)
-    // En producción con Oracle Cloud, cambiar a: 'http://localhost:3001/api/verify-policy'
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const url = `${supabaseUrl}/functions/v1/verify-policy`;
+    const url = 'http://localhost:3001/api/verify-policy';
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({ code }),
     });
