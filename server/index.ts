@@ -73,21 +73,7 @@ const getAccessToken = async (): Promise<string> => {
     throw new Error('Missing required environment variables for authentication');
   }
 
-  if (!isProduction) {
-    console.log('=== Token Request Debug ===');
-    console.log('URL:', tokenUrl);
-    console.log('client_id:', clientId);
-    console.log('grant_type:', grantType);
-    console.log('scope:', scope);
-  }
-
   console.log('🔐 [AUTH] Iniciando solicitud de token...');
-  console.log('🔐 [AUTH] URL:', tokenUrl);
-  console.log('🔐 [AUTH] Client ID:', clientId);
-  console.log('🔐 [AUTH] Grant Type:', grantType);
-  console.log('🔐 [AUTH] Scope:', scope);
-  console.log('🔐 [AUTH] Client Secret presente:', clientSecret ? 'SÍ (longitud: ' + clientSecret.length + ')' : 'NO');
-  console.log('🔐 [AUTH] Client Secret (primeros 10 chars):', clientSecret?.substring(0, 10) + '...');
 
   const bodyParts = [
     `client_id=${clientId}`,
@@ -97,64 +83,58 @@ const getAccessToken = async (): Promise<string> => {
   ];
   const body = bodyParts.join('&');
 
-  try {
-    const httpAgent = new http.Agent({ keepAlive: true });
-    const httpsAgent = new https.Agent({
-      keepAlive: true,
-      rejectUnauthorized: false
-    });
-
-    console.log('🔐 [AUTH] Enviando petición POST a Microsoft Azure AD...');
-    console.log('🔐 [AUTH] Body params (secret oculto):', body.replace(clientSecret || '', '***SECRET***'));
-
-    const response = await fetch(tokenUrl, {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(tokenUrl);
+    const options = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || 443,
+      path: parsedUrl.pathname + parsedUrl.search,
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body)
       },
-      body: body,
-      // @ts-ignore
-      agent: (_parsedURL: URL) => {
-        if (_parsedURL.protocol === 'http:') {
-          return httpAgent;
+      rejectUnauthorized: false
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        console.log('🔐 [AUTH] Respuesta recibida - Status:', res.statusCode);
+
+        if (res.statusCode === 200) {
+          try {
+            const jsonData: TokenResponse = JSON.parse(data);
+            console.log('✅ [AUTH] Token obtenido exitosamente');
+
+            cachedToken = jsonData.access_token;
+            tokenExpiration = Date.now() + (jsonData.expires_in * 1000) - 60000;
+
+            resolve(jsonData.access_token);
+          } catch (e) {
+            console.error('❌ [AUTH] Error parseando respuesta:', e);
+            reject(new Error('Error al parsear respuesta del servidor'));
+          }
         } else {
-          return httpsAgent;
+          console.error('❌ [AUTH] Token response error:', res.statusCode, data);
+          reject(new Error('Error al obtener el token de autenticación'));
         }
-      }
+      });
     });
 
-    console.log('🔐 [AUTH] Respuesta recibida - Status:', response.status);
-    console.log('🔐 [AUTH] Response OK:', response.ok);
-    console.log('🔐 [AUTH] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+    req.on('error', (error) => {
+      console.error('❌ [AUTH] Error en request:', error);
+      reject(new Error('No se pudo autenticar con el servicio'));
+    });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ [AUTH] Token response error:', response.status, errorText);
-      throw new Error('Error al obtener el token de autenticación');
-    }
-
-    const data: TokenResponse = await response.json();
-    console.log('✅ [AUTH] Token obtenido exitosamente');
-    console.log('✅ [AUTH] Token type:', data.token_type);
-    console.log('✅ [AUTH] Expires in:', data.expires_in, 'segundos');
-    console.log('✅ [AUTH] Token (primeros 20 chars):', data.access_token.substring(0, 20) + '...');
-
-    cachedToken = data.access_token;
-    tokenExpiration = Date.now() + (data.expires_in * 1000) - 60000;
-
-    return data.access_token;
-  } catch (error) {
-    console.error('❌ [AUTH] Error obteniendo token:', error);
-    console.error('❌ [AUTH] Error name:', error instanceof Error ? error.name : 'unknown');
-    console.error('❌ [AUTH] Error message:', error instanceof Error ? error.message : 'unknown');
-    console.error('❌ [AUTH] Error stack:', error instanceof Error ? error.stack : 'unknown');
-
-    if (error && typeof error === 'object' && 'cause' in error) {
-      console.error('❌ [AUTH] Error cause:', error.cause);
-    }
-
-    throw new Error('No se pudo autenticar con el servicio');
-  }
+    req.write(body);
+    req.end();
+  });
 };
 
 app.post('/api/verify-policy', async (req: Request, res: Response) => {
